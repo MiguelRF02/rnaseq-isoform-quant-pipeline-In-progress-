@@ -10,4 +10,4 @@ This project is being developed to build practical experience with workflow mana
 
 ## Planned data source
 
-- **[rnaseqDTU](https://github.com/mikelove/rnaseqDTU)** (Love, Soneson & Patro) — a Bioconductor workflow for differential transcript usage (DTU) following Salmon quantification. Uses small simulated RNA-seq reads, openly available on Zenodo (DOI: [10.5281/zenodo.1410442](https://doi.org/10.5281/zenodo.1410442)), sized for quick, reproducible runs.
+- **[rnaseqDTU](https://github.com/mikelove/rnaseqDTU)** (Love, Soneson & Patro) — a Bioconductor workflow for differential transcript usage (DTU) following Salmon quantification. Uses small simulated RNA-seq reads.
