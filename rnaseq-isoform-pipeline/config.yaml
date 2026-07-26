@@ -1,0 +1,65 @@
+# ============================================================
+# RNA-Seq Isoform Quantification Pipeline — configuration
+# ============================================================
+# data_source controls which branch of the Snakefile runs:
+#   "toy"  -> generates a small synthetic dataset locally (fast, no
+#             downloads, good for testing the pipeline logic)
+#   "real" -> downloads the rnaseqDTU / GENCODE data (large; fill in
+#             the `real:` section below before switching to this)
+data_source: "toy"
+
+seed: 42
+
+# ------------------------------------------------------------------
+# Toy dataset parameters
+# ------------------------------------------------------------------
+# We simulate N genes, each with 2 isoforms related by a simple
+# exon-skipping event (isoform 1 = exonA+exonB+exonC, isoform 2 =
+# exonA+exonC). Isoform usage proportions differ between conditions,
+# so there's a real (if simplified) DTU signal to look for downstream.
+toy:
+  n_genes: 6
+  exon_length: 300
+  read_length: 100
+  reads_per_sample: 4000          # total read pairs per sample
+  samples:
+    - {id: "sample_A1", condition: "A"}
+    - {id: "sample_A2", condition: "A"}
+    - {id: "sample_A3", condition: "A"}
+    - {id: "sample_B1", condition: "B"}
+    - {id: "sample_B2", condition: "B"}
+    - {id: "sample_B3", condition: "B"}
+  # [prop_isoform1, prop_isoform2] per condition, applied to every gene
+  condition_isoform_usage:
+    A: [0.8, 0.2]
+    B: [0.2, 0.8]
+
+# ------------------------------------------------------------------
+# Real dataset parameters (rnaseqDTU / Love, Soneson & Patro)
+# ------------------------------------------------------------------
+# TODO before switching data_source to "real":
+#   - resolve the exact Zenodo record(s) for the FASTQ batches
+#     (uploaded in 3 batches of 8 samples; see the rnaseqDTU README
+#     / F1000Research paper "Data availability" section)
+#   - fill reads_urls below with one r1/r2 URL pair per sample
+#   - fill transcriptome_fasta_url / gtf_url with the GENCODE v28
+#     human transcriptome release used by the original workflow
+real:
+  transcriptome_fasta_url: ""     # e.g. GENCODE v28 transcripts.fa.gz
+  gtf_url: ""                     # e.g. GENCODE v28 annotation.gtf.gz
+  samples: []                    # [{id: "s1_1", condition: "1"}, ...]
+  reads_urls: {}                  # {sample_id: {r1: url, r2: url}}
+
+# ------------------------------------------------------------------
+# Paths
+# ------------------------------------------------------------------
+paths:
+  data_dir: "data"
+  results_dir: "results"
+
+# ------------------------------------------------------------------
+# Salmon
+# ------------------------------------------------------------------
+salmon:
+  threads: 4
+  libtype: "A"          # auto-detect library type

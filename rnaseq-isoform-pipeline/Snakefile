@@ -1,0 +1,144 @@
+"""
+RNA-Seq Isoform Quantification Pipeline
+========================================
+QC -> (toy simulation | real download) -> Salmon index -> Salmon quant
+
+Run with:
+    snakemake --cores 4 --use-conda
+
+See README.md for setup and for how to switch data_source: toy -> real.
+"""
+
+configfile: "config.yaml"
+
+DATA_SOURCE = config["data_source"]
+DATA_DIR = config["paths"]["data_dir"]
+RESULTS_DIR = config["paths"]["results_dir"]
+
+if DATA_SOURCE == "toy":
+    SAMPLES = [s["id"] for s in config["toy"]["samples"]]
+elif DATA_SOURCE == "real":
+    SAMPLES = [s["id"] for s in config["real"]["samples"]]
+else:
+    raise ValueError(f"Unknown data_source '{DATA_SOURCE}' in config.yaml")
+
+
+rule all:
+    input:
+        expand(f"{RESULTS_DIR}/qc/{{sample}}_R1_fastqc.html", sample=SAMPLES),
+        expand(f"{RESULTS_DIR}/qc/{{sample}}_R2_fastqc.html", sample=SAMPLES),
+        expand(f"{RESULTS_DIR}/quant/{{sample}}/quant.sf", sample=SAMPLES),
+
+
+# ------------------------------------------------------------------
+# 1. Data acquisition
+#    toy  -> simulate a small synthetic dataset locally
+#    real -> download FASTQ + reference from Zenodo / GENCODE
+# ------------------------------------------------------------------
+if DATA_SOURCE == "toy":
+
+    rule simulate_toy_data:
+        output:
+            fasta=f"{DATA_DIR}/reference/transcripts.fa",
+            tx2gene=f"{DATA_DIR}/reference/tx2gene.tsv",
+            samples_csv=f"{DATA_DIR}/samples.csv",
+            reads=expand(
+                f"{DATA_DIR}/reads/{{sample}}_R{{r}}.fastq.gz",
+                sample=SAMPLES,
+                r=[1, 2],
+            ),
+        conda:
+            "envs/simulate.yaml"
+        log:
+            "logs/simulate_toy_data.log",
+        script:
+            "workflow/scripts/simulate_toy_data.py"
+
+else:
+
+    rule download_reference:
+        output:
+            fasta=f"{DATA_DIR}/reference/transcripts.fa",
+        params:
+            url=config["real"]["transcriptome_fasta_url"],
+        log:
+            "logs/download_reference.log",
+        shell:
+            "curl -L {params.url} 2> {log} | gunzip -c > {output.fasta}"
+
+    rule download_reads:
+        output:
+            r1=f"{DATA_DIR}/reads/{{sample}}_R1.fastq.gz",
+            r2=f"{DATA_DIR}/reads/{{sample}}_R2.fastq.gz",
+        params:
+            url_r1=lambda wc: config["real"]["reads_urls"][wc.sample]["r1"],
+            url_r2=lambda wc: config["real"]["reads_urls"][wc.sample]["r2"],
+        log:
+            "logs/download_reads/{sample}.log",
+        shell:
+            """
+            curl -L {params.url_r1} -o {output.r1} 2> {log}
+            curl -L {params.url_r2} -o {output.r2} 2>> {log}
+            """
+
+
+# ------------------------------------------------------------------
+# 2. Quality control
+# ------------------------------------------------------------------
+rule fastqc:
+    input:
+        r1=f"{DATA_DIR}/reads/{{sample}}_R1.fastq.gz",
+        r2=f"{DATA_DIR}/reads/{{sample}}_R2.fastq.gz",
+    output:
+        html1=f"{RESULTS_DIR}/qc/{{sample}}_R1_fastqc.html",
+        html2=f"{RESULTS_DIR}/qc/{{sample}}_R2_fastqc.html",
+    params:
+        outdir=f"{RESULTS_DIR}/qc",
+    conda:
+        "envs/fastqc.yaml"
+    log:
+        "logs/fastqc/{sample}.log",
+    shell:
+        "mkdir -p {params.outdir} && "
+        "fastqc {input.r1} {input.r2} -o {params.outdir} &> {log}"
+
+
+# ------------------------------------------------------------------
+# 3. Salmon index + quantification
+# ------------------------------------------------------------------
+rule salmon_index:
+    input:
+        fasta=f"{DATA_DIR}/reference/transcripts.fa",
+    output:
+        directory(f"{DATA_DIR}/reference/salmon_index"),
+    params:
+        extra="--keepDuplicates" if DATA_SOURCE == "real" else "",
+    threads: config["salmon"]["threads"]
+    conda:
+        "envs/salmon.yaml"
+    log:
+        "logs/salmon_index.log",
+    shell:
+        "salmon index -t {input.fasta} -i {output} -p {threads} "
+        "{params.extra} &> {log}"
+
+
+rule salmon_quant:
+    input:
+        r1=f"{DATA_DIR}/reads/{{sample}}_R1.fastq.gz",
+        r2=f"{DATA_DIR}/reads/{{sample}}_R2.fastq.gz",
+        index=f"{DATA_DIR}/reference/salmon_index",
+    output:
+        f"{RESULTS_DIR}/quant/{{sample}}/quant.sf",
+    params:
+        outdir=lambda wc: f"{RESULTS_DIR}/quant/{wc.sample}",
+        libtype=config["salmon"]["libtype"],
+    threads: config["salmon"]["threads"]
+    conda:
+        "envs/salmon.yaml"
+    log:
+        "logs/salmon_quant/{sample}.log",
+    shell:
+        "salmon quant -i {input.index} -l {params.libtype} "
+        "-1 {input.r1} -2 {input.r2} -p {threads} "
+        "-o {params.outdir} &> {log}"

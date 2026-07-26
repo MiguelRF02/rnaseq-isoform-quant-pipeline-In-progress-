@@ -1,0 +1,10 @@
+# Entorno "base" del proyecto: solo necesita Snakemake para orquestar.
+# Cada regla usa además su propio entorno (envs/*.yaml) vía --use-conda.
+name: rnaseq-isoform-pipeline
+channels:
+  - bioconda
+  - conda-forge
+dependencies:
+  - python=3.11
+  - snakemake-minimal=8.*
+  - mamba
