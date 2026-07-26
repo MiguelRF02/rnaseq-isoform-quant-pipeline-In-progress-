@@ -84,6 +84,29 @@ snakemake --dag | dot -Tpng > dag.png
 Outputs land in `results/qc/` (FastQC reports) and `results/quant/<sample>/quant.sf`
 (one Salmon quantification file per sample, ready for `tximport`).
 
+## Validation against known ground truth
+
+The toy dataset is generated with a known answer: of the 100 simulated
+genes, the first 50 have a real, programmed isoform-usage swap between
+conditions (80/20 in condition A, 20/80 in condition B), and the other 50
+have constant 50/50 usage (no signal). This ground truth is written to
+`data/reference/toy_ground_truth.tsv`, so the DTU results can be checked
+against it directly.
+
+Running the full pipeline end to end and comparing `results/dtu/dtu_results.tsv`
+against the ground truth gives:
+
+| | Genes with true DTU (n=50) | Null genes (n=50) |
+|---|---|---|
+| Detected as significant (q < 0.05) | 50/50 | 0/50 |
+| adj. p-value range | 1.4e-109 – 2.3e-63 | 0.23 – 0.999 |
+
+100% sensitivity, 0% false positives — confirming that the full chain
+(simulation → Salmon → tximport → DRIMSeq → stageR) is working correctly
+before scaling up to real data. The very extreme p-values are expected for
+a clean synthetic signal with no biological noise; real data (see below)
+will show a much less clear-cut separation.
+
 ## Planned data source (for scaling beyond the toy dataset)
 
 - **[rnaseqDTU](https://github.com/mikelove/rnaseqDTU)** (Love, Soneson &
