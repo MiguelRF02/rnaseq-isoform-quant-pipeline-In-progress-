@@ -61,7 +61,9 @@ txi <- tximport(
   quant_files,
   type = "salmon",
   txOut = TRUE,                      # keep transcript-level (not gene-level)
-  countsFromAbundance = "scaledTPM"  # recommended by DRIMSeq for count-based testing
+  countsFromAbundance = "scaledTPM", # recommended by DRIMSeq for count-based testing
+  dropInfReps = TRUE                 # we didn't run salmon with --numBootstraps,
+                                      # so there are no inferential replicates to import
 )
 
 counts_df <- data.frame(
