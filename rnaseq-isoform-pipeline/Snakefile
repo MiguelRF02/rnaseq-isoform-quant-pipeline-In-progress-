@@ -28,6 +28,7 @@ rule all:
         expand(f"{RESULTS_DIR}/qc/{{sample}}_R1_fastqc.html", sample=SAMPLES),
         expand(f"{RESULTS_DIR}/qc/{{sample}}_R2_fastqc.html", sample=SAMPLES),
         expand(f"{RESULTS_DIR}/quant/{{sample}}/quant.sf", sample=SAMPLES),
+        f"{RESULTS_DIR}/multiqc/multiqc_report.html",
 
 
 # ------------------------------------------------------------------
@@ -92,6 +93,8 @@ rule fastqc:
     output:
         html1=f"{RESULTS_DIR}/qc/{{sample}}_R1_fastqc.html",
         html2=f"{RESULTS_DIR}/qc/{{sample}}_R2_fastqc.html",
+        zip1=f"{RESULTS_DIR}/qc/{{sample}}_R1_fastqc.zip",
+        zip2=f"{RESULTS_DIR}/qc/{{sample}}_R2_fastqc.zip",
     params:
         outdir=f"{RESULTS_DIR}/qc",
     conda:
@@ -142,3 +145,29 @@ rule salmon_quant:
         "salmon quant -i {input.index} -l {params.libtype} "
         "-1 {input.r1} -2 {input.r2} -p {threads} "
         "-o {params.outdir} &> {log}"
+
+
+# ------------------------------------------------------------------
+# 4. MultiQC — aggregate FastQC + Salmon reports into one HTML
+# ------------------------------------------------------------------
+rule multiqc:
+    input:
+        # FastQC zips (MultiQC parses these, not the HTMLs)
+        expand(f"{RESULTS_DIR}/qc/{{sample}}_R1_fastqc.zip", sample=SAMPLES),
+        expand(f"{RESULTS_DIR}/qc/{{sample}}_R2_fastqc.zip", sample=SAMPLES),
+        # Salmon's per-sample logs/meta_info.json, so MultiQC also
+        # summarizes mapping rate etc. alongside the QC metrics
+        expand(f"{RESULTS_DIR}/quant/{{sample}}/quant.sf", sample=SAMPLES),
+    output:
+        f"{RESULTS_DIR}/multiqc/multiqc_report.html",
+    params:
+        qc_dir=f"{RESULTS_DIR}/qc",
+        quant_dir=f"{RESULTS_DIR}/quant",
+        outdir=f"{RESULTS_DIR}/multiqc",
+    conda:
+        "envs/multiqc.yaml"
+    log:
+        "logs/multiqc.log",
+    shell:
+        "multiqc {params.qc_dir} {params.quant_dir} "
+        "-o {params.outdir} -n multiqc_report --force &> {log}"
