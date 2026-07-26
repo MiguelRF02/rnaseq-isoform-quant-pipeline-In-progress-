@@ -29,6 +29,7 @@ rule all:
         expand(f"{RESULTS_DIR}/qc/{{sample}}_R2_fastqc.html", sample=SAMPLES),
         expand(f"{RESULTS_DIR}/quant/{{sample}}/quant.sf", sample=SAMPLES),
         f"{RESULTS_DIR}/multiqc/multiqc_report.html",
+        f"{RESULTS_DIR}/dtu/dtu_results.tsv",
 
 
 # ------------------------------------------------------------------
@@ -171,3 +172,22 @@ rule multiqc:
     shell:
         "multiqc {params.qc_dir} {params.quant_dir} "
         "-o {params.outdir} -n multiqc_report --force &> {log}"
+
+
+# ------------------------------------------------------------------
+# 5. Differential Transcript Usage (DTU): tximport -> DRIMSeq -> stageR
+# ------------------------------------------------------------------
+rule dtu_analysis:
+    input:
+        quant=expand(f"{RESULTS_DIR}/quant/{{sample}}/quant.sf", sample=SAMPLES),
+        tx2gene=f"{DATA_DIR}/reference/tx2gene.tsv",
+        samples_csv=f"{DATA_DIR}/samples.csv",
+    output:
+        table=f"{RESULTS_DIR}/dtu/dtu_results.tsv",
+        plot=f"{RESULTS_DIR}/dtu/isoform_proportions.pdf",
+    conda:
+        "envs/dtu.yaml"
+    log:
+        "logs/dtu_analysis.log",
+    script:
+        "workflow/scripts/run_dtu.R"

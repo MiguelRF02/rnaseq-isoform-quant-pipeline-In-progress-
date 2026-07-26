@@ -28,9 +28,16 @@ profile).
                   ┌────────┴────────┐
                   ▼                 ▼
               FastQC          Salmon index
-                                    │
-                                    ▼
-                            Salmon quant (per sample)
+                  │                 │
+                  │                 ▼
+                  │           Salmon quant (per sample)
+                  │                 │
+                  └────────┬────────┘
+                           ▼
+                       MultiQC report
+
+  (por separado, usando los quant.sf ya generados)
+  tximport → DRIMSeq → stageR → dtu_results.tsv + isoform_proportions.pdf
 ```
 
 ## Project structure
@@ -108,7 +115,8 @@ planning for it.
 - [x] Project scaffold + Snakemake skeleton
 - [x] Toy dataset generation for fast local iteration
 - [x] FastQC + Salmon index + Salmon quant rules
-- [ ] MultiQC aggregation step
+- [x] MultiQC aggregation step
+- [x] Differential transcript usage on the toy dataset (tximport / DRIMSeq / stageR)
 - [ ] Switch to real rnaseqDTU data (Zenodo + GENCODE v28)
 - [ ] Downstream differential transcript usage (DRIMSeq / DEXSeq / stageR),
       following the rnaseqDTU workflow
