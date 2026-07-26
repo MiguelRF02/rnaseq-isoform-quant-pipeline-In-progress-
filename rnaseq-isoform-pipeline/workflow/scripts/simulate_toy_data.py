@@ -33,6 +33,7 @@ seed = config.get("seed", 42)
 random.seed(seed)
 
 N_GENES = toy_cfg["n_genes"]
+N_DTU_GENES = toy_cfg.get("n_dtu_genes", N_GENES)  # rest are "null" genes
 EXON_LEN = toy_cfg["exon_length"]
 READ_LEN = toy_cfg["read_length"]
 READS_PER_SAMPLE = toy_cfg["reads_per_sample"]
@@ -96,6 +97,14 @@ with open(out.tx2gene, "w") as fh:
     for tx_id, gene_id in tx2gene.items():
         fh.write(f"{tx_id}\t{gene_id}\n")
 
+# Ground truth: which genes were simulated with a real DTU signal vs
+# which are "null" (constant 50/50 usage in both conditions). Useful
+# to sanity-check the DRIMSeq/stageR output against.
+with open(out.ground_truth, "w") as fh:
+    fh.write("gene_id\ttrue_dtu\n")
+    for g in range(1, N_GENES + 1):
+        fh.write(f"gene{g}\t{'TRUE' if g <= N_DTU_GENES else 'FALSE'}\n")
+
 # ------------------------------------------------------------------
 # 2. samples.csv
 # ------------------------------------------------------------------
@@ -112,11 +121,14 @@ reads_by_sample = {s["id"]: {1: [], 2: []} for s in SAMPLES}
 
 for s in SAMPLES:
     sample_id, condition = s["id"], s["condition"]
-    props = USAGE[condition]  # [prop_iso1, prop_iso2], same across genes
+    dtu_props = USAGE[condition]  # e.g. [0.8, 0.2] for A, [0.2, 0.8] for B
+    null_props = [0.5, 0.5]       # constant across conditions -> no DTU signal
 
     for g in range(1, N_GENES + 1):
         gene_id = f"gene{g}"
         iso1, iso2 = f"{gene_id}_iso1", f"{gene_id}_iso2"
+        props = dtu_props if g <= N_DTU_GENES else null_props
+
         gene_reads = READS_PER_SAMPLE // N_GENES
         n_iso1 = int(gene_reads * props[0])
         n_iso2 = gene_reads - n_iso1
@@ -144,7 +156,8 @@ for (sample_id, mate), path in reads_out.items():
             fh.write(f"@{name}\n{seq}\n+\n{qual}\n")
 
 print(
-    f"[simulate_toy_data] {len(SAMPLES)} samples, {N_GENES} genes x 2 isoforms, "
+    f"[simulate_toy_data] {len(SAMPLES)} samples, {N_GENES} genes x 2 isoforms "
+    f"({N_DTU_GENES} with true DTU signal, {N_GENES - N_DTU_GENES} null), "
     f"seed={seed}.",
     file=sys.stderr,
 )

@@ -43,6 +43,7 @@ if DATA_SOURCE == "toy":
         output:
             fasta=f"{DATA_DIR}/reference/transcripts.fa",
             tx2gene=f"{DATA_DIR}/reference/tx2gene.tsv",
+            ground_truth=f"{DATA_DIR}/reference/toy_ground_truth.tsv",
             samples_csv=f"{DATA_DIR}/samples.csv",
             reads=expand(
                 f"{DATA_DIR}/reads/{{sample}}_R{{r}}.fastq.gz",

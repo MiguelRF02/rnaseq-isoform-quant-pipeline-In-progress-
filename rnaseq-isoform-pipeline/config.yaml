@@ -15,13 +15,24 @@ seed: 42
 # ------------------------------------------------------------------
 # We simulate N genes, each with 2 isoforms related by a simple
 # exon-skipping event (isoform 1 = exonA+exonB+exonC, isoform 2 =
-# exonA+exonC). Isoform usage proportions differ between conditions,
-# so there's a real (if simplified) DTU signal to look for downstream.
+# exonA+exonC). The first `n_dtu_genes` genes get isoform usage
+# proportions that differ between conditions (the "true DTU" genes);
+# the rest keep a constant 50/50 usage in both conditions (the "null"
+# genes). Mixing signal and null genes lets us actually validate that
+# the downstream DTU analysis (DRIMSeq/stageR) distinguishes them.
+#
+# NOTE: DRIMSeq estimates a precision parameter shared across genes
+# (empirical Bayes shrinkage), which needs a reasonable number of
+# genes to be stable -- a handful of genes (as in earlier versions of
+# this config) is not enough and produces degenerate results. 100
+# genes is still "toy" scale (runs in seconds) but gives DRIMSeq
+# something workable.
 toy:
-  n_genes: 6
+  n_genes: 100
+  n_dtu_genes: 50        # first 50 genes have true differential usage
   exon_length: 300
   read_length: 100
-  reads_per_sample: 4000          # total read pairs per sample
+  reads_per_sample: 20000          # total read pairs per sample
   samples:
     - {id: "sample_A1", condition: "A"}
     - {id: "sample_A2", condition: "A"}
@@ -29,8 +40,9 @@ toy:
     - {id: "sample_B1", condition: "B"}
     - {id: "sample_B2", condition: "B"}
     - {id: "sample_B3", condition: "B"}
-  # [prop_isoform1, prop_isoform2] per condition, applied to every gene
+  # [prop_isoform1, prop_isoform2] per condition, applied to the DTU genes
   condition_isoform_usage:
+
     A: [0.8, 0.2]
     B: [0.2, 0.8]
 
