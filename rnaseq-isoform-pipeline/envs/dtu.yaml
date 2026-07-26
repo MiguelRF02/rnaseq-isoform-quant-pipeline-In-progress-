@@ -1,0 +1,11 @@
+name: dtu
+channels:
+  - bioconda
+  - conda-forge
+dependencies:
+  - r-base=4.3
+  - bioconductor-tximport=1.30.0
+  - bioconductor-drimseq=1.30.0
+  - bioconductor-stager=1.24.0
+  - r-dplyr=1.1.*
+  - r-readr=2.1.*
