@@ -34,9 +34,9 @@ seed <- snakemake@config[["seed"]]
 
 set.seed(seed)
 
-# ------------------------------------------------------------------
+
 # 1. Load sample metadata and transcript-to-gene mapping
-# ------------------------------------------------------------------
+
 # quant.sf paths look like .../quant/<sample_id>/quant.sf -- recover
 # the sample_id from the parent directory name
 sample_ids <- basename(dirname(quant_files))
@@ -54,9 +54,9 @@ cat(sprintf(
   paste(unique(samples$condition), collapse = ", ")
 ))
 
-# ------------------------------------------------------------------
+
 # 2. tximport: transcript-level counts from Salmon's quant.sf
-# ------------------------------------------------------------------
+
 txi <- tximport(
   quant_files,
   type = "salmon",
@@ -74,17 +74,14 @@ counts_df <- data.frame(
   stringsAsFactors = FALSE
 )
 
-# ------------------------------------------------------------------
+
 # 3. DRIMSeq: model isoform usage proportions per gene
-# ------------------------------------------------------------------
+
 pd <- data.frame(sample_id = samples$sample_id, condition = samples$condition)
 
 d <- dmDSdata(counts = counts_df, samples = pd)
 
-# NOTE: thresholds tuned for this small toy dataset (6 genes, 2
-# isoforms each, ~700 reads/gene/sample). For the real rnaseqDTU
-# dataset these should be revisited (the original workflow uses
-# higher, sample-size-appropriate thresholds).
+
 d <- dmFilter(
   d,
   min_samps_gene_expr = nrow(pd),   # gene expressed in every sample
@@ -105,9 +102,9 @@ d <- dmTest(d, coef = colnames(design_full)[ncol(design_full)])
 res_gene <- DRIMSeq::results(d)
 res_tx <- DRIMSeq::results(d, level = "feature")
 
-# ------------------------------------------------------------------
+
 # 4. stageR: two-stage testing (screen genes, then confirm transcripts)
-# ------------------------------------------------------------------
+
 res_tx_clean <- res_tx[!is.na(res_tx$pvalue), ]
 
 pScreen <- res_gene$pvalue
@@ -130,18 +127,18 @@ stageRObj <- stageRTx(
 stageRObj <- stageWiseAdjustment(object = stageRObj, method = "dtu", alpha = 0.05)
 stager_res <- getAdjustedPValues(stageRObj, order = TRUE, onlySignificantGenes = FALSE)
 
-# ------------------------------------------------------------------
+
 # 5. Write results table
-# ------------------------------------------------------------------
+
 merged <- merge(res_tx_clean, stager_res, by.x = "feature_id", by.y = "txID")
 merged <- merged[order(merged$transcript), ]
 write_tsv(merged, out_table)
 
 cat(sprintf("Wrote DTU results table: %s (%d rows)\n", out_table, nrow(merged)))
 
-# ------------------------------------------------------------------
+
 # 6. Proportions plot per gene (visualize the isoform-usage swap)
-# ------------------------------------------------------------------
+
 gene_ids <- unique(counts(d)$gene_id)
 pdf(out_plot, width = 7, height = 4)
 for (g in gene_ids) {

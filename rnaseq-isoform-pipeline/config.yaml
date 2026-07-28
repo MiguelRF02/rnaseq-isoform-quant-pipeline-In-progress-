@@ -2,10 +2,8 @@
 # RNA-Seq Isoform Quantification Pipeline — configuration
 # ============================================================
 # data_source controls which branch of the Snakefile runs:
-#   "toy"  -> generates a small synthetic dataset locally (fast, no
-#             downloads, good for testing the pipeline logic)
-#   "real" -> downloads the rnaseqDTU / GENCODE data (large; fill in
-#             the `real:` section below before switching to this)
+#   "toy"  -> generates a small synthetic dataset locally 
+#   "real" -> downloads the rnaseqDTU / GENCODE data 
 data_source: "toy"
 
 seed: 42
@@ -21,9 +19,9 @@ seed: 42
 # genes). Mixing signal and null genes lets us actually validate that
 # the downstream DTU analysis (DRIMSeq/stageR) distinguishes them.
 #
-# NOTE: DRIMSeq estimates a precision parameter shared across genes
+# DRIMSeq estimates a precision parameter shared across genes
 # (empirical Bayes shrinkage), which needs a reasonable number of
-# genes to be stable -- a handful of genes (as in earlier versions of
+# genes to be stable, a handful of genes (as in earlier versions of
 # this config) is not enough and produces degenerate results. 100
 # genes is still "toy" scale (runs in seconds) but gives DRIMSeq
 # something workable.

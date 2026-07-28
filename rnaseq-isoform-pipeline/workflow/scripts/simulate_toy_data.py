@@ -71,9 +71,9 @@ def simulate_fragment(seq, read_len):
     return mutate(r1), mutate(r2)
 
 
-# ------------------------------------------------------------------
+
 # 1. Build the tiny transcriptome
-# ------------------------------------------------------------------
+
 transcripts = {}   # transcript_id -> sequence
 tx2gene = {}       # transcript_id -> gene_id
 
@@ -105,18 +105,18 @@ with open(out.ground_truth, "w") as fh:
     for g in range(1, N_GENES + 1):
         fh.write(f"gene{g}\t{'TRUE' if g <= N_DTU_GENES else 'FALSE'}\n")
 
-# ------------------------------------------------------------------
+
 # 2. samples.csv
-# ------------------------------------------------------------------
+
 os.makedirs(os.path.dirname(out.samples_csv), exist_ok=True)
 with open(out.samples_csv, "w") as fh:
     fh.write("sample_id,condition\n")
     for s in SAMPLES:
         fh.write(f"{s['id']},{s['condition']}\n")
 
-# ------------------------------------------------------------------
+
 # 3. Simulate paired-end reads per sample
-# ------------------------------------------------------------------
+
 reads_by_sample = {s["id"]: {1: [], 2: []} for s in SAMPLES}
 
 for s in SAMPLES:
