@@ -1,5 +1,4 @@
-# Entorno "base" del proyecto: solo necesita Snakemake para orquestar.
-# Cada regla usa además su propio entorno (envs/*.yaml) vía --use-conda.
+# Base enviroment Only needs Snakemake
 name: rnaseq-isoform-pipeline
 channels:
   - bioconda

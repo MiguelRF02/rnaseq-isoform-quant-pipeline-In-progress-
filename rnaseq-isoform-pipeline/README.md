@@ -4,10 +4,10 @@
 
 ## Purpose
 
-A reproducible RNA-seq pipeline, orchestrated with **Snakemake**, that goes
+A reproducible RNA-seq pipeline, made with **Snakemake**, that goes
 from raw reads to transcript/isoform-level quantification using **Salmon**.
-The goal is to build a foundation for isoform-level analysis (as opposed to
-gene-level only) — connecting quality control, alignment-free quantification,
+The goal is to build a  isoform-level analysis (not
+gene-level only) connecting quality control, alignment-free quantification,
 and (eventually) differential transcript usage in a single reproducible
 workflow.
 
@@ -36,8 +36,7 @@ profile).
                            ▼
                        MultiQC report
 
-  (por separado, usando los quant.sf ya generados)
-  tximport → DRIMSeq → stageR → dtu_results.tsv + isoform_proportions.pdf
+    tximport → DRIMSeq → stageR → dtu_results.tsv + isoform_proportions.pdf
 ```
 
 ## Project structure
@@ -53,13 +52,14 @@ profile).
 ├── workflow/
 │   └── scripts/
 │       └── simulate_toy_data.py
+│       └── run_dtu.R
 ├── data/                  # generated/downloaded inputs (gitignored)
 └── results/               # QC reports + Salmon quantifications (gitignored)
 ```
 
 ## Quickstart (toy dataset)
 
-The default `config.yaml` has `data_source: "toy"`, which generates a small
+The default `config.yaml` has `data_source: "toy"`, which generates a 
 synthetic dataset (a handful of genes, each with two isoforms related by
 exon skipping, with isoform usage proportions that differ between two
 conditions) instead of downloading anything. This is meant for testing the
