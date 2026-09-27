@@ -66,13 +66,29 @@ txi <- tximport(
                                       # so there are no inferential replicates to import
 )
 
+# Comparar ignorando el sufijo de version (".N") por si el FASTA y el
+# GTF difieren en si lo incluyen o no -- problema comun con datos reales.
+tx_ids_clean <- sub("\\.[0-9]+$", "", rownames(txi$counts))
+tx2gene_ids_clean <- sub("\\.[0-9]+$", "", tx2gene$transcript_id)
+
+gene_id_matched <- tx2gene$gene_id[match(tx_ids_clean, tx2gene_ids_clean)]
+
+n_unmatched <- sum(is.na(gene_id_matched))
+if (n_unmatched > 0) {
+  cat(sprintf(
+    "WARNING: %d of %d transcripts had no matching gene_id and will be dropped.\n",
+    n_unmatched, length(gene_id_matched)
+  ))
+}
+
 counts_df <- data.frame(
   feature_id = rownames(txi$counts),
-  gene_id = tx2gene$gene_id[match(rownames(txi$counts), tx2gene$transcript_id)],
+  gene_id = gene_id_matched,
   txi$counts,
   check.names = FALSE,
   stringsAsFactors = FALSE
 )
+counts_df <- counts_df[!is.na(counts_df$gene_id), ]
 
 
 # 3. DRIMSeq: model isoform usage proportions per gene
