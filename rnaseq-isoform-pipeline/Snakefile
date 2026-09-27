@@ -67,7 +67,23 @@ else:
         log:
             "logs/download_reference.log",
         shell:
-            "curl -L {params.url} 2> {log} | gunzip -c > {output.fasta}"
+            # gunzip descomprime; el sed limpia headers tipo GENCODE
+            # (ENST...|ENSG...|...) dejando solo el ID de transcrito,
+            # para que coincida con transcript_id del GTF.
+            "curl -L {params.url} 2> {log} "
+            "| gunzip -c "
+            "| sed -E 's/^>([^|[:space:]]+).*/>\\1/' "
+            "> {output.fasta}"
+
+    rule download_gtf:
+        output:
+            gtf=f"{DATA_DIR}/reference/annotation.gtf",
+        params:
+            url=config["real"]["gtf_url"],
+        log:
+            "logs/download_gtf.log",
+        shell:
+            "curl -L {params.url} -o {output.gtf} 2> {log}"
 
     rule download_reads:
         output:
@@ -84,6 +100,24 @@ else:
             curl -L {params.url_r2} -o {output.r2} 2>> {log}
             """
 
+    rule build_tx2gene:
+        input:
+            gtf=f"{DATA_DIR}/reference/annotation.gtf",
+        output:
+            tx2gene=f"{DATA_DIR}/reference/tx2gene.tsv",
+        log:
+            "logs/build_tx2gene.log",
+        script:
+            "workflow/scripts/build_tx2gene.py"
+
+    rule write_real_samples_csv:
+        output:
+            samples_csv=f"{DATA_DIR}/samples.csv",
+        run:
+            with open(output.samples_csv, "w") as f:
+                f.write("sample_id,condition\n")
+                for s in config["real"]["samples"]:
+                    f.write(f"{s['id']},{s['condition']}\n")
 
 
 # 2. Quality control
