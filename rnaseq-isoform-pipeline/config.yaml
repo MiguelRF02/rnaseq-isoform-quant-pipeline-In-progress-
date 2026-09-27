@@ -4,7 +4,7 @@
 # data_source controls which branch of the Snakefile runs:
 #   "toy"  -> generates a small synthetic dataset locally 
 #   "real" -> downloads the rnaseqDTU / GENCODE data 
-data_source: "toy"
+data_source: "real"
 
 seed: 42
 
@@ -55,10 +55,18 @@ toy:
 #   - fill transcriptome_fasta_url / gtf_url with the GENCODE v28
 #     human transcriptome release used by the original workflow
 real:
-  transcriptome_fasta_url: ""     # e.g. GENCODE v28 transcripts.fa.gz
-  gtf_url: ""                     # e.g. GENCODE v28 annotation.gtf.gz
-  samples: []                    # [{id: "s1_1", condition: "1"}, ...]
-  reads_urls: {}                  # {sample_id: {r1: url, r2: url}}
+  transcriptome_fasta_url: "https://raw.githubusercontent.com/csoneson/rnaseqworkflow_exampledata/master/reference/Gencode28/gencode.v28.transcripts.1.1.10M.fa.gz"
+  gtf_url: "https://raw.githubusercontent.com/csoneson/rnaseqworkflow_exampledata/master/reference/Gencode28/gencode.v28.annotation.1.1.10M.gtf"
+  samples:
+    - {id: "SRR1039508", condition: "untreated"}
+    - {id: "SRR1039509", condition: "dex"}
+    - {id: "SRR1039512", condition: "untreated"}
+    - {id: "SRR1039513", condition: "dex"}
+  reads_urls:
+    SRR1039508: {r1: "https://raw.githubusercontent.com/csoneson/rnaseqworkflow_exampledata/master/FASTQ/SRR1039508_R1.fastq.gz", r2: "https://raw.githubusercontent.com/csoneson/rnaseqworkflow_exampledata/master/FASTQ/SRR1039508_R2.fastq.gz"}
+    SRR1039509: {r1: "https://raw.githubusercontent.com/csoneson/rnaseqworkflow_exampledata/master/FASTQ/SRR1039509_R1.fastq.gz", r2: "https://raw.githubusercontent.com/csoneson/rnaseqworkflow_exampledata/master/FASTQ/SRR1039509_R2.fastq.gz"}
+    SRR1039512: {r1: "https://raw.githubusercontent.com/csoneson/rnaseqworkflow_exampledata/master/FASTQ/SRR1039512_R1.fastq.gz", r2: "https://raw.githubusercontent.com/csoneson/rnaseqworkflow_exampledata/master/FASTQ/SRR1039512_R2.fastq.gz"}
+    SRR1039513: {r1: "https://raw.githubusercontent.com/csoneson/rnaseqworkflow_exampledata/master/FASTQ/SRR1039513_R1.fastq.gz", r2: "https://raw.githubusercontent.com/csoneson/rnaseqworkflow_exampledata/master/FASTQ/SRR1039513_R2.fastq.gz"}
 
 # ------------------------------------------------------------------
 # Paths
